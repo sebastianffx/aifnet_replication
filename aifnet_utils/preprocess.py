@@ -1,4 +1,5 @@
 import numpy as np
+import nibabel as nib
 
 def read_nifti_file(filepath, min_num_sequence):
     """Read and load volume"""

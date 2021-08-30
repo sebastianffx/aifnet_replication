@@ -1,8 +1,11 @@
 import nibabel as nib
 import glob
+import random
 import numpy as np
 import os
 from natsort import natsorted
+import tensorflow as tf
+from .preprocess import read_nifti_file, normalize, normalize_aif, resize_volume, process_scan, normalize_zero_one
 
 def read_isles_annotations(aif_annotations_path, root_dir, minimum_number_volumes_ctp, return_aif_only = True):
     aif_annotations = []
@@ -76,3 +79,193 @@ def read_isles_volumes(root_dir, aif_annotations_path, min_num_volumes_ctp, take
                 ("Not processed")
         datalist.append({"image": fname, "ctpvals": ctp_vals[:,:,:,0:min_num_volumes_ctp]})
     return datalist
+
+
+
+##CPT Augmentation techniques for including in the data loaders
+def delay_sequence_padding(sequence,delay_t):
+    nb_timepoints = np.array(sequence).shape[0] #This assumes a SINGLE vector with all the timepoints
+    delayed_sequence = np.zeros(np.array(sequence).shape)
+    delayed_sequence[0:delay_t] = sequence[0] #Repeating the first time point
+    delayed_sequence[delay_t:]  = sequence[1:nb_timepoints-delay_t+1]
+    return delayed_sequence
+
+def anticipate_sequence_padding(sequence,delay_t):
+    nb_timepoints = np.array(sequence).shape[0] #This assumes a SINGLE vector with all the timepoints
+    early_intensity = np.zeros(sequence.shape)
+    early_intensity[0:nb_timepoints-delay_t] = sequence[delay_t:nb_timepoints] #Shifting the first time points
+    early_intensity[nb_timepoints-delay_t:] = sequence[-1]
+    return early_intensity
+
+
+def late_bolus(volume_sequence, labels, delay_t=None):
+    labels_shape = np.array(labels).shape
+        
+    delayed_volume, delayed_intensity = np.zeros(volume_sequence.shape), np.zeros(np.array(labels).shape)
+    nb_timepoints = volume_sequence.shape[-1]
+
+    first_volume = volume_sequence[:,:,:,0]    
+    if delay_t == None:
+        delay_t = random.randint(1,int(nb_timepoints/3))
+    if delay_t == 0:
+        return volume_sequence, labels
+    
+    for i in range(0,delay_t+1):
+        delayed_volume[:,:,:,i] = first_volume
+    #print(i)
+    delayed_volume[:,:,:,i:] = volume_sequence[:,:,:,1:nb_timepoints-i+1]
+    
+    #Delaying each of the labels
+    if len(labels_shape)==2:#We are processing the AIF and the VOF
+        delayed_aif = delay_sequence_padding(labels[0],delay_t)
+        delayed_vof = delay_sequence_padding(labels[1],delay_t)
+        delayed_intensity = np.array([delayed_aif,delayed_vof])
+    else: #We are only processing the AIF
+        delayed_intensity = delay_sequence_padding(labels,delay_t)
+
+    return delayed_volume, delayed_intensity
+
+def early_bolus(volume_sequence, labels, delay_t=None):
+    early_volume = np.zeros(volume_sequence.shape)
+    nb_timepoints = volume_sequence.shape[-1]
+    labels_shape = np.array(labels).shape
+
+    last_volume = volume_sequence[:,:,:,-1]
+    if delay_t == None:
+        delay_t = random.randint(1,int(nb_timepoints/3))
+    if delay_t == 0:
+        return volume_sequence, labels
+    
+    early_volume[:,:,:,0:nb_timepoints-delay_t] = volume_sequence[:,:,:,delay_t:nb_timepoints]
+    for i in range(nb_timepoints-delay_t,nb_timepoints):   
+        early_volume[:,:,:,i] = volume_sequence[:,:,:,-1]
+    if len(labels_shape)==2:#We are processing the AIF and the VOF
+        early_aif = anticipate_sequence_padding(labels[0],delay_t)
+        early_vof = anticipate_sequence_padding(labels[1],delay_t)
+        early_intensity = np.array([early_aif,early_vof])
+    else: #We are only processing the AIF
+        early_intensity = anticipate_sequence_padding(labels,delay_t)
+
+    return early_volume, early_intensity
+
+
+#Dataset generator
+class ISLES18DataGen_aifvof_aug(tf.keras.utils.Sequence):
+  
+    def __init__(self, 
+                 ctp_volumes,
+                 annotations_aif,
+                 annotations_vof,
+                 minimum_number_volumes_ctp,
+                 batch_size=1,
+                 input_size=(256, 256, None,43),
+                 time_arrival_augmentation = True,
+                 delay_t = None,
+                 shuffle=True):
+        self.ctp_volumes = ctp_volumes        
+        self.labels_aif = annotations_aif
+        self.labels_vof = annotations_vof
+        self.minimum_number_volumes_ctp = minimum_number_volumes_ctp
+        self.batch_size = batch_size
+        self.delay_t = delay_t
+        self.input_size = input_size
+        self.shuffle = shuffle
+        self.augment = time_arrival_augmentation
+        self.n = len(self.ctp_volumes)
+        self.indices = np.arange(len(self.ctp_volumes))
+
+    def on_epoch_end(self):
+        if self.shuffle:
+            np.random.shuffle(self.indices)
+
+    def __get_input(self, img_idx):
+        #Get the volume
+        ctp_vals = self.ctp_volumes[img_idx]['ctpvals']
+        volume_sequence = normalize(ctp_vals)
+        #Get the labels
+        case_id = self.ctp_volumes[img_idx]['image'].split('.')[-2]
+        #print(case_id)
+
+        label_aif = normalize_zero_one(self.labels_aif[case_id])
+        label_vof = normalize_zero_one(self.labels_vof[case_id])
+        labels = [label_aif,label_vof]
+        #labels = np.array([label_aif,label_vof])
+        if self.augment:
+            augment_functions = [early_bolus,late_bolus]
+            random_augmentation = random.choice(augment_functions)
+            if self.delay_t == None:
+                self.delay_t = np.random.randint(0,10)
+                #print("Voy a aumentar con un delaz de " + str(self.delay_t))
+            volume, labels = random_augmentation(volume_sequence,[label_aif,label_vof], self.delay_t)
+        return volume,labels
+
+    
+    def __getitem__(self, idx): #This function returns the batch 
+        #print(self.indices)
+        inds = self.indices[idx * self.batch_size:(idx + 1) * self.batch_size]
+        #print(inds)
+        #batch_x = [self.ctp_volumes[index] for index in inds]
+        #batch_y = self.annotations[inds]
+        batch_x, batch_y = [], []
+        for index in inds:
+            x, y = self.__get_input(index)
+            batch_x.append(x)
+            batch_y.append(y)
+        return np.array(batch_x), np.array(batch_y).squeeze()
+
+    def __len__(self):
+        return self.n // self.batch_size
+
+
+#Dataset generator
+class ISLES18DataGen_aifvof(tf.keras.utils.Sequence):
+  
+    def __init__(self, 
+                 ctp_volumes,
+                 annotations_aif,
+                 annotations_vof,
+                 minimum_number_volumes_ctp,
+                 batch_size=1,
+                 input_size=(256, 256, None,43),
+                 shuffle=True):
+        self.ctp_volumes = ctp_volumes 
+        self.labels_aif = annotations_aif
+        self.labels_vof = annotations_vof
+        self.minimum_number_volumes_ctp = minimum_number_volumes_ctp
+        self.batch_size = batch_size
+        self.input_size = input_size
+        self.shuffle = shuffle        
+        self.n = len(self.ctp_volumes)
+        self.indices = np.arange(len(self.ctp_volumes))
+
+    def on_epoch_end(self):
+        if self.shuffle:
+            np.random.shuffle(self.indices)
+
+    def __get_input(self, img_idx):
+        #Get the volume
+        ctp_vals = self.ctp_volumes[img_idx]['ctpvals']
+        volume = normalize(ctp_vals)
+        #Get the labels
+        case_id = ctp_volumes[img_idx]['image'].split('.')[-2]
+
+        label_aif = normalize_aif(self.labels_aif[0][case_id])
+        label_vof = normalize_aif(self.labels_vof[0][case_id])
+        #labels = np.array([label_aif,label_vof])
+        return volume,[label_aif,label_vof]
+        #return volume,label_aif
+    
+    def __getitem__(self, idx): #This function returns the batch 
+        inds = self.indices[idx * self.batch_size:(idx + 1) * self.batch_size]
+        #print(inds)
+        #batch_x = [self.ctp_volumes[index] for index in inds]
+        #batch_y = self.annotations[inds]
+        batch_x, batch_y = [], []
+        for index in inds:            
+            x, y = self.__get_input(index)
+            batch_x.append(x)
+            batch_y.append(y)
+        return np.array(batch_x), np.array(batch_y).squeeze()
+
+    def __len__(self):
+        return self.n // self.batch_size

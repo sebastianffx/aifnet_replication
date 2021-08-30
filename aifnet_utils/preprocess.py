@@ -23,6 +23,11 @@ def normalize_aif(aif):
     normalized_aif = aif/np.max(aif)
     return normalized_aif
 
+def normalize_zero_one(x):
+    normalized_zero_one = (x-np.min(x))/(np.max(x)-np.min(x))
+    return normalized_zero_one
+    
+
 def resize_volume(img):
     """Resize across z-axis"""
     # Set the desired depth

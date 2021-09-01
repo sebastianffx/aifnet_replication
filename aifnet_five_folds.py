@@ -37,13 +37,14 @@ import gc
 keras.backend.set_image_data_format('channels_last')
 
 
-root_dir     = '/media/sebastian/data/ASAP/ISLES2018_Training/'
+root_dir     =  '/Users/sebastianotalora/work/postdoc/data/ISLES/'#'/media/sebastian/data/ASAP/ISLES2018_Training/'
+ROOT_EXP =  '/Users/sebastianotalora/work/postdoc/ctp/aifnet_replication'
+
 #At insel: /media/sebastian/data/ASAP/ISLES2018_Training
 #Local: '/Users/sebastianotalora/work/postdoc/data/ISLES/'
-aif_annotations_path = '/home/sebastian/experiments/aifnet_replication/annotated_aif_vof_complete_revised.csv'
+aif_annotations_path = ROOT_EXP+ '/annotated_aif_vof_complete_revised.csv'
 min_num_volumes_ctp = 43
-ROOT_EXP = '/home/sebastian/experiments/aifnet_replication'#'/Users/sebastianotalora/work/postdoc/ctp/aifnet_replication'
-nb_epochs=10
+nb_epochs=2
 
 for lr in [0.001, 0.0001, 0.1, 0.00001]:
     for current_fold in range(1,6):        
@@ -52,9 +53,9 @@ for lr in [0.001, 0.0001, 0.1, 0.00001]:
         prediction_ids = []
 
         #Reading AIFs and VOFs for each of the partitions
-        train_partition_path = '/home/sebastian/experiments/aifnet_replication/partitions/fold_'+str(current_fold) +'/train.txt'
-        valid_partition_path = '/home/sebastian/experiments/aifnet_replication/partitions/fold_'+str(current_fold) +'/valid.txt'
-        test_partition_path = '/home/sebastian/experiments/aifnet_replication/partitions/fold_'+str(current_fold) +'/test.txt'
+        train_partition_path = ROOT_EXP+'/partitions/fold_'+str(current_fold) +'/train.txt'
+        valid_partition_path = ROOT_EXP+'/partitions/fold_'+str(current_fold) +'/valid.txt'
+        test_partition_path =  ROOT_EXP+'/partitions/fold_'+str(current_fold) +'/test.txt'
 
         aif_annotations_train, vof_annotations_train = read_isles_annotations_from_file(aif_annotations_path, train_partition_path, 
                                                         root_dir, min_num_volumes_ctp, return_aif_only = False)
@@ -81,15 +82,15 @@ for lr in [0.001, 0.0001, 0.1, 0.00001]:
         # Build model.
         model = get_model_twoPvols(width=256, height=256, num_channels=43)
         model.summary()
-        tf.keras.utils.plot_model(
-            model,
-            to_file="aifnet.png",
-            show_shapes=False,
-            show_dtype=False,
-            show_layer_names=True,
-            rankdir="TB",
-            expand_nested=False,
-            dpi=96)
+        #tf.keras.utils.plot_model(
+        #    model,
+        #    to_file="aifnet.png",
+        #    show_shapes=False,
+        #    show_dtype=False,
+        #    show_layer_names=True,
+        #    rankdir="TB",
+        #    expand_nested=False,
+        #    dpi=96)
 
         initial_learning_rate = lr#0.001
         lr_schedule = keras.optimizers.schedules.ExponentialDecay(
@@ -141,7 +142,7 @@ for lr in [0.001, 0.0001, 0.1, 0.00001]:
                 y = aif_annotations_test[case_id]
             if type_predictions == 'VOF':
                 y = vof_annotations_test[case_id]
-            prefix_fig = '/home/sebastian/experiments/aifnet_replication/results/predictions_aif/'+path_tensorboard_log.split('/')[-1]+'_case_'+str(case_id)
+            prefix_fig = ROOT_EXP + '/results/predictions_aif/'+path_tensorboard_log.split('/')[-1]+'_case_'+str(case_id)
             results_meassures.append(plot_predictions(model,x,y, prefix_fig, True, type_predictions,True))
 
         preds_fold = tfp.stats.correlation(np.array(results_meassures)[:,1,:],np.array(results_meassures)[:,0,:], sample_axis=0, event_axis=None)

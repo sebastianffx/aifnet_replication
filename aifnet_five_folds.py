@@ -12,19 +12,18 @@ from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 import nibabel as nib
 from scipy import ndimage
 import glob
-from numpy import asarray
-from numpy import savetxt
 import sys,os
 from natsort import natsorted
 import tensorflow_probability as tfp
 import random
 from aifnet_utils.preprocess import read_nifti_file, normalize, normalize_aif, process_scan, normalize_zero_one
 from aifnet_utils.losses import MaxCorrelation
-from aifnet_utils.data_loaders import read_isles_annotations_from_file, read_isles_volumes_from_file, ISLES18DataGen_aifvof_aug
+from aifnet_utils.data_loaders import read_isles_volumepaths_from_file_otf, read_isles_annotations_from_file, ISLES18DataGen_aifvof_otf
 from aifnet_utils.data_loaders import delay_sequence_padding, anticipate_sequence_padding, late_bolus, early_bolus
 from aifnet_utils.results import plot_predictions
 from aifnet_utils.models_aifnet import get_model_twoPvols
 import gc
+
 
 #get_ipython().run_line_magic('matplotlib', 'inline')
 
@@ -35,18 +34,19 @@ import gc
 
 
 keras.backend.set_image_data_format('channels_last')
-
-
-root_dir     =  '/Users/sebastianotalora/work/postdoc/data/ISLES/'#'/media/sebastian/data/ASAP/ISLES2018_Training/'
-ROOT_EXP =  '/Users/sebastianotalora/work/postdoc/ctp/aifnet_replication'
-
+ROOT_EXP = '/home/sebastian/experiments/aifnet_replication/'
+root_dir     = '/media/sebastian/data/ASAP/ISLES2018_Training'
 #At insel: /media/sebastian/data/ASAP/ISLES2018_Training
 #Local: '/Users/sebastianotalora/work/postdoc/data/ISLES/'
-aif_annotations_path = ROOT_EXP+ '/annotated_aif_vof_complete_revised.csv'
+aif_annotations_path = ROOT_EXP + 'annotated_aif_vof_complete_revised.csv'
 min_num_volumes_ctp = 43
-nb_epochs=2
+#ROOT_EXP = '/home/sebastian/experiments/aifnet_replication'
 
-for lr in [0.001, 0.0001, 0.1, 0.00001]:
+nb_epochs=5
+lrs = [0.01, 0.1, 0.00001, 0.0001, 0.001]
+random_lrs = [random.uniform(0,lr)*2 for lr in lrs]
+
+for lr in lrs:
     for current_fold in range(1,6):        
         print('======= TRAINING FOR THE FOLD ' + str(current_fold) + ' (LR)  '+ str(lr) +'=======')
         prediction_meassures = []
@@ -66,13 +66,9 @@ for lr in [0.001, 0.0001, 0.1, 0.00001]:
 
 
 
-        ctp_volumes_train = read_isles_volumes_from_file(root_dir, train_partition_path, aif_annotations_path,
-                                                        min_num_volumes_ctp, take_two_slices_only=False)
-        ctp_volumes_valid = read_isles_volumes_from_file(root_dir, valid_partition_path, aif_annotations_path,
-                                                        min_num_volumes_ctp, take_two_slices_only=False)
-        ctp_volumes_test = read_isles_volumes_from_file(root_dir, test_partition_path, aif_annotations_path,
-                                                        min_num_volumes_ctp, take_two_slices_only=False)
-
+        ctp_volumes_train = read_isles_volumepaths_from_file_otf(root_dir, train_partition_path, aif_annotations_path)
+        ctp_volumes_valid = read_isles_volumepaths_from_file_otf(root_dir, valid_partition_path, aif_annotations_path)
+        ctp_volumes_test = read_isles_volumepaths_from_file_otf(root_dir, test_partition_path, aif_annotations_path)
 
         print(len(ctp_volumes_train), len(aif_annotations_train))
         print(len(ctp_volumes_valid), len(aif_annotations_valid))
@@ -120,10 +116,10 @@ for lr in [0.001, 0.0001, 0.1, 0.00001]:
 
 
 
-        train_datagen = ISLES18DataGen_aifvof_aug(ctp_volumes=ctp_volumes_train, annotations_aif=aif_annotations_train,
+        train_datagen = ISLES18DataGen_aifvof_otf(ctp_volumes=ctp_volumes_train, annotations_aif=aif_annotations_train,
                                     annotations_vof=vof_annotations_train,minimum_number_volumes_ctp = 43, batch_size=1,
                                                 time_arrival_augmentation = True)
-        validation_datagen =  ISLES18DataGen_aifvof_aug(ctp_volumes=ctp_volumes_valid, annotations_aif=aif_annotations_valid,
+        validation_datagen =  ISLES18DataGen_aifvof_otf(ctp_volumes=ctp_volumes_valid, annotations_aif=aif_annotations_valid,
                                     annotations_vof=vof_annotations_valid,minimum_number_volumes_ctp = 43, batch_size=1,
                                                 time_arrival_augmentation = True)
 
@@ -137,7 +133,9 @@ for lr in [0.001, 0.0001, 0.1, 0.00001]:
         for case_number in range(len(ctp_volumes_test)):
             case_id = ctp_volumes_test[case_number]['image'].split('.')[-2]
             prediction_ids.append(case_id)
-            x =  ctp_volumes_test[case_number]['ctpvals']
+            cur_nib = nib.load(ctp_volumes_test[case_number]['image'])
+            ctp_vals = cur_nib.get_fdata()
+            x = normalize(ctp_vals[:,:,:,0:min_num_volumes_ctp])
             if type_predictions == 'AIF':
                 y = aif_annotations_test[case_id]
             if type_predictions == 'VOF':
@@ -149,8 +147,8 @@ for lr in [0.001, 0.0001, 0.1, 0.00001]:
         preds_fold = preds_fold.numpy()
         prediction_meassures.append([preds_fold.mean(),preds_fold.std(),preds_fold.var()])
 
-        savetxt('results/pearson_fold_'+str(current_fold)+'.csv', prediction_meassures, delimiter=',',fmt='%1.5f')
-        savetxt('results/allpreds_fold_'+str(current_fold)+'.csv', np.array(results_meassures)[:,1,:], delimiter=',',fmt='%1.5f')
+        np.savetxt('results/pearson_fold_'+str(current_fold)+'.csv', prediction_meassures, delimiter=',',fmt='%1.5f')
+        np.savetxt('results/allpreds_fold_'+str(current_fold)+'.csv', np.array(results_meassures)[:,1,:], delimiter=',',fmt='%1.5f')
 
 
         test_ids_file=open('results/pred_ids_fold_'+str(current_fold)+'.csv','w')

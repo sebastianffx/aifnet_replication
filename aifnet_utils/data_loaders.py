@@ -171,6 +171,32 @@ def read_isles_volumes_from_file(root_dir,partition_file_path, aif_annotations_p
             datalist.append({"image": fname, "ctpvals": ctp_vals[:,:,:,0:min_num_volumes_ctp]})
     return datalist
 
+def read_isles_volumepaths_from_file_otf(root_dir,partition_file_path, aif_annotations_path):
+    dataset_dir = os.path.join(root_dir, "TRAINING")
+    filenames_4D = natsorted(glob.glob(dataset_dir + "/case_*/*4D*/*nii*"))
+    cases_paths = {}
+    cases_paths = {path.split('.')[-2]: path for path in filenames_4D}
+
+    cases_annotations = {}
+    aif_annotations_file = open(aif_annotations_path,'r')
+    aif_annotations_file.readline()
+    for line in aif_annotations_file: #Here we substract one to account for 0-indexing in python
+        cases_annotations[line.split(',')[0]] = [np.array([int(line.split(',')[1]),int(line.split(',')[2]),int(line.split(',')[3])])-1,
+                                             np.array([int(line.split(',')[4]),int(line.split(',')[5]),int(line.split(',')[6])])-1]
+    partition_file = open(partition_file_path,'r')
+    relevant_cases = []
+    for line in partition_file:
+        relevant_cases.append(line.split('.')[-2])
+    partition_file.close()
+
+    datalist = []
+    
+    for cur_case in cases_annotations.keys():
+        if cur_case in set(relevant_cases):            
+            fname = cases_paths[cur_case]
+            datalist.append({"image": fname})
+    return datalist
+
 
 ##CPT Augmentation techniques for including in the data loaders
 def delay_sequence_padding(sequence,delay_t):
@@ -237,6 +263,74 @@ def early_bolus(volume_sequence, labels, delay_t=None):
 
     return early_volume, early_intensity
 
+
+class ISLES18DataGen_aifvof_otf(tf.keras.utils.Sequence): 
+    def __init__(self, 
+                 ctp_volumes,
+                 annotations_aif,
+                 annotations_vof,
+                 minimum_number_volumes_ctp,
+                 batch_size=1,
+                 input_size=(256, 256, None,43),
+                 time_arrival_augmentation = True,
+                 delay_t = None,
+                 shuffle=True):
+        self.ctp_volumes = ctp_volumes        
+        self.labels_aif = annotations_aif
+        self.labels_vof = annotations_vof
+        self.minimum_number_volumes_ctp = minimum_number_volumes_ctp
+        self.batch_size = batch_size
+        self.delay_t = delay_t
+        self.input_size = input_size
+        self.shuffle = shuffle
+        self.augment = time_arrival_augmentation
+        self.n = len(self.ctp_volumes)
+        self.indices = np.arange(len(self.ctp_volumes))
+        
+    def on_epoch_end(self):
+        if self.shuffle:
+            np.random.shuffle(self.indices)
+
+    def __get_input(self, img_idx):
+        #Get the volume
+        
+        fname = self.ctp_volumes[img_idx]['image']
+        cur_nib = nib.load(fname)
+        ctp_vals = cur_nib.get_fdata()
+        volume_sequence = normalize(ctp_vals[:,:,:,0:self.minimum_number_volumes_ctp])
+        #Get the labels
+        case_id = self.ctp_volumes[img_idx]['image'].split('.')[-2]
+        #print(case_id)
+
+        label_aif = normalize_zero_one(self.labels_aif[case_id])
+        label_vof = normalize_zero_one(self.labels_vof[case_id])
+        labels = [label_aif,label_vof]
+        #labels = np.array([label_aif,label_vof])
+        if self.augment:
+            augment_functions = [early_bolus,late_bolus]
+            random_augmentation = random.choice(augment_functions)
+            if self.delay_t == None:
+                self.delay_t = np.random.randint(0,10)
+                #print("Voy a aumentar con un delaz de " + str(self.delay_t))
+            volume, labels = random_augmentation(volume_sequence,[label_aif,label_vof], self.delay_t)
+        return volume,labels
+
+    
+    def __getitem__(self, idx): #This function returns the batch 
+        #print(self.indices)
+        inds = self.indices[idx * self.batch_size:(idx + 1) * self.batch_size]
+        #print(inds)
+        #batch_x = [self.ctp_volumes[index] for index in inds]
+        #batch_y = self.annotations[inds]
+        batch_x, batch_y = [], []
+        for index in inds:
+            x, y = self.__get_input(index)
+            batch_x.append(x)
+            batch_y.append(y)
+        return np.array(batch_x), np.array(batch_y).squeeze()
+
+    def __len__(self):
+        return self.n // self.batch_size
 
 #Dataset generator
 class ISLES18DataGen_aifvof_aug(tf.keras.utils.Sequence):
@@ -308,6 +402,7 @@ class ISLES18DataGen_aifvof_aug(tf.keras.utils.Sequence):
 
 #Dataset generator
 class ISLES18DataGen_aifvof(tf.keras.utils.Sequence):
+
   
     def __init__(self, 
                  ctp_volumes,

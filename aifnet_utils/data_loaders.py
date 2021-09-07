@@ -274,7 +274,9 @@ class ISLES18DataGen_aifvof_otf(tf.keras.utils.Sequence):
                  input_size=(256, 256, None,43),
                  time_arrival_augmentation = True,
                  delay_t = None,
-                 shuffle=True):
+                 shuffle=True,
+                 normalize_hu=True,
+                 scale_aif = True):
         self.ctp_volumes = ctp_volumes        
         self.labels_aif = annotations_aif
         self.labels_vof = annotations_vof
@@ -286,6 +288,8 @@ class ISLES18DataGen_aifvof_otf(tf.keras.utils.Sequence):
         self.augment = time_arrival_augmentation
         self.n = len(self.ctp_volumes)
         self.indices = np.arange(len(self.ctp_volumes))
+        self.normalize_hu = normalize_hu
+        self.scale_aif = scale_aif
         
     def on_epoch_end(self):
         if self.shuffle:
@@ -297,13 +301,17 @@ class ISLES18DataGen_aifvof_otf(tf.keras.utils.Sequence):
         fname = self.ctp_volumes[img_idx]['image']
         cur_nib = nib.load(fname)
         ctp_vals = cur_nib.get_fdata()
-        volume_sequence = normalize(ctp_vals[:,:,:,0:self.minimum_number_volumes_ctp])
+        volume_sequence = ctp_vals[:,:,:,0:self.minimum_number_volumes_ctp]
+        if self.normalize_hu:
+            volume_sequence = normalize(volume_sequence)
         #Get the labels
         case_id = self.ctp_volumes[img_idx]['image'].split('.')[-2]
         #print(case_id)
-
-        label_aif = normalize_zero_one(self.labels_aif[case_id])
-        label_vof = normalize_zero_one(self.labels_vof[case_id])
+        label_aif = self.labels_aif[case_id]
+        label_vof = self.labels_vof[case_id]
+        if self.scale_aif:
+            label_aif = normalize_zero_one(label_aif)
+            label_vof = normalize_zero_one(label_vof)
         labels = [label_aif,label_vof]
         #labels = np.array([label_aif,label_vof])
         if self.augment:

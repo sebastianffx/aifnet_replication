@@ -38,12 +38,12 @@ ROOT_EXP = '/home/sebastian/experiments/aifnet_replication/'
 root_dir     = '/media/sebastian/data/ASAP/ISLES2018_Training'
 #At insel: /media/sebastian/data/ASAP/ISLES2018_Training
 #Local: '/Users/sebastianotalora/work/postdoc/data/ISLES/'
-aif_annotations_path = ROOT_EXP + 'annotated_aif_vof_complete_revised.csv'
+aif_annotations_path = ROOT_EXP + 'radiologist_annotations.csv'#'annotated_aif_vof_complete_revised.csv'
 min_num_volumes_ctp = 43
 #ROOT_EXP = '/home/sebastian/experiments/aifnet_replication'
 
 nb_epochs=5
-lrs = [0.01, 0.1, 0.00001, 0.0001, 0.001]
+lrs = [0.01]#, 0.1, 0.00001, 0.0001, 0.001]
 random_lrs = [random.uniform(0,lr)*2 for lr in lrs]
 
 for lr in lrs:
@@ -53,9 +53,9 @@ for lr in lrs:
         prediction_ids = []
 
         #Reading AIFs and VOFs for each of the partitions
-        train_partition_path = ROOT_EXP+'/partitions/fold_'+str(current_fold) +'/train.txt'
-        valid_partition_path = ROOT_EXP+'/partitions/fold_'+str(current_fold) +'/valid.txt'
-        test_partition_path =  ROOT_EXP+'/partitions/fold_'+str(current_fold) +'/test.txt'
+        train_partition_path = ROOT_EXP+'/partitions/fold_'+str(current_fold) +'/train_v2.txt'
+        valid_partition_path = ROOT_EXP+'/partitions/fold_'+str(current_fold) +'/valid_v2.txt'
+        test_partition_path =  ROOT_EXP+'/partitions/fold_'+str(current_fold) +'/test_v2.txt'
 
         aif_annotations_train, vof_annotations_train = read_isles_annotations_from_file(aif_annotations_path, train_partition_path, 
                                                         root_dir, min_num_volumes_ctp, return_aif_only = False)
@@ -155,8 +155,8 @@ for lr in lrs:
         for element in prediction_ids:        
             test_ids_file.write(element+'\n')
         test_ids_file.close()
-        del ctp_volumes_train
-        del ctp_volumes_valid
-        del ctp_volumes_test    
-        gc.collect()
+        #del ctp_volumes_train
+        #del ctp_volumes_valid
+        #del ctp_volumes_test    
+        #gc.collect()
 

@@ -45,14 +45,16 @@ def read_isles_annotations_from_file(aif_annotations_path, partition_file_path, 
     aif_annotations_file = open(aif_annotations_path,'r')
     aif_annotations_file.readline()
     cases_annotations = {}
+
     for line in aif_annotations_file: #Here we substract one to account for 0-indexing in python
-        cases_annotations[line.split(',')[0]] = [np.array([int(line.split(',')[1]),int(line.split(',')[2]),int(line.split(',')[3])])-1,
-                                                 np.array([int(line.split(',')[4]),int(line.split(',')[5]),int(line.split(',')[6])])-1]
+        cases_annotations[line.split(',')[0]] = [np.array([int(line.split(',')[1]),int(line.split(',')[2]),int(line.split(',')[3])]),
+                                                 np.array([int(line.split(',')[4]),int(line.split(',')[5]),int(line.split(',')[6])])]
     #print(cases_annotations)
     aif_annotations_file.close()
-    
+    dataset_dir_test = os.path.join(root_dir, "TESTING")
     dataset_dir = os.path.join(root_dir, "TRAINING")
-    filenames_4D = natsorted(glob.glob(dataset_dir + "/case_*/*4D*/*nii*"))
+    filenames_4D = natsorted(glob.glob(dataset_dir + "/case_*/*4D*/*nii*") + glob.glob(dataset_dir_test + "/case_*/*4D*/*nii*"))
+
     #print(len(filenames_4D))
     cases_paths = {path.split('.')[-2]: path for path in filenames_4D}
     #Reading only the relevant cases from the partition file 
@@ -128,7 +130,9 @@ def read_isles_volumes(root_dir, aif_annotations_path, min_num_volumes_ctp, take
 
 def read_isles_volumes_from_file(root_dir,partition_file_path, aif_annotations_path, min_num_volumes_ctp, take_two_slices_only=False):
     dataset_dir = os.path.join(root_dir, "TRAINING")
-    filenames_4D = natsorted(glob.glob(dataset_dir + "/case_*/*4D*/*nii*"))
+    dataset_dir_test = os.path.join(root_dir, "TESTING")
+    filenames_4D = natsorted(glob.glob(dataset_dir + "/case_*/*4D*/*nii*") + glob.glob(dataset_dir_test + "/case_*/*4D*/*nii*"))
+    #print("La longitud de todos los niis es " +str(len(filenames_4D)))
     cases_paths = {}
     cases_paths = {path.split('.')[-2]: path for path in filenames_4D}
     #This is a little bit awful, but we need to get the coordinates from the annotations file to 
@@ -173,7 +177,9 @@ def read_isles_volumes_from_file(root_dir,partition_file_path, aif_annotations_p
 
 def read_isles_volumepaths_from_file_otf(root_dir,partition_file_path, aif_annotations_path):
     dataset_dir = os.path.join(root_dir, "TRAINING")
-    filenames_4D = natsorted(glob.glob(dataset_dir + "/case_*/*4D*/*nii*"))
+    dataset_dir_test = os.path.join(root_dir, "TESTING")
+    filenames_4D = natsorted(glob.glob(dataset_dir + "/case_*/*4D*/*nii*") + glob.glob(dataset_dir_test + "/case_*/*4D*/*nii*"))
+    #print("La longitud de todos los niis es " +str(len(filenames_4D)))
     cases_paths = {}
     cases_paths = {path.split('.')[-2]: path for path in filenames_4D}
 

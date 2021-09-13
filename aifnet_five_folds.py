@@ -38,8 +38,8 @@ ROOT_EXP = '/home/sebastian/experiments/aifnet_replication/'
 root_dir     = '/media/sebastian/data/ASAP/ISLES2018_Training'
 #At insel: /media/sebastian/data/ASAP/ISLES2018_Training
 #Local: '/Users/sebastianotalora/work/postdoc/data/ISLES/'
-aif_annotations_path = ROOT_EXP + 'radiologist_annotations.csv'#'annotated_aif_vof_complete_revised.csv'
-min_num_volumes_ctp = 43
+aif_annotations_path = ROOT_EXP + 'annotated_aif_vof_complete_revised.csv'#'radiologist_annotations.csv'#'annotated_aif_vof_complete_revised.csv'
+min_num_volumes_ctp = 28
 #ROOT_EXP = '/home/sebastian/experiments/aifnet_replication'
 
 nb_epochs=5
@@ -65,7 +65,7 @@ for lr in lrs:
                                                 root_dir, min_num_volumes_ctp, return_aif_only = False)
 
 
-
+        print(aif_annotations_train['346308'].shape)
         ctp_volumes_train = read_isles_volumepaths_from_file_otf(root_dir, train_partition_path, aif_annotations_path)
         ctp_volumes_valid = read_isles_volumepaths_from_file_otf(root_dir, valid_partition_path, aif_annotations_path)
         ctp_volumes_test = read_isles_volumepaths_from_file_otf(root_dir, test_partition_path, aif_annotations_path)
@@ -76,7 +76,7 @@ for lr in lrs:
 
 
         # Build model.
-        model = get_model_twoPvols(width=256, height=256, num_channels=43)
+        model = get_model_twoPvols(width=256, height=256, num_channels=min_num_volumes_ctp)
         model.summary()
         #tf.keras.utils.plot_model(
         #    model,
@@ -117,10 +117,10 @@ for lr in lrs:
 
 
         train_datagen = ISLES18DataGen_aifvof_otf(ctp_volumes=ctp_volumes_train, annotations_aif=aif_annotations_train,
-                                    annotations_vof=vof_annotations_train,minimum_number_volumes_ctp = 43, batch_size=1,
+                                    annotations_vof=vof_annotations_train,minimum_number_volumes_ctp = min_num_volumes_ctp, batch_size=1,
                                                 time_arrival_augmentation = True)
         validation_datagen =  ISLES18DataGen_aifvof_otf(ctp_volumes=ctp_volumes_valid, annotations_aif=aif_annotations_valid,
-                                    annotations_vof=vof_annotations_valid,minimum_number_volumes_ctp = 43, batch_size=1,
+                                    annotations_vof=vof_annotations_valid,minimum_number_volumes_ctp = min_num_volumes_ctp, batch_size=1,
                                                 time_arrival_augmentation = True)
 
         model.fit(train_datagen,batch_size=1,callbacks=[checkpointer,tb_callback,early_stopping_cb],

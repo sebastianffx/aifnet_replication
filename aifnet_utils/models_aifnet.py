@@ -2,11 +2,11 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
-def get_model_twoPvols(width=256, height=256, num_channels=43):
+def get_model_twoPvols(width=256, height=256, num_channels=28):
     """Build a 3D convolutional neural network model."""
     #width and height of the PCT is 256, the number of slices is variable, and the number of channels are
     #the number of timepoints in the PCT sequence        
-    inputs = keras.Input((width, height, None , 43))
+    inputs = keras.Input((width, height, None , num_channels))
 
     x = layers.Conv3D(filters=16, kernel_size=(3,3,1), activation="relu", data_format='channels_last', padding='same')(inputs)
     #x = layers.Dropout(0.3)(x)

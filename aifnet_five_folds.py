@@ -128,34 +128,34 @@ for lr in lrs:
                 epochs=nb_epochs, validation_data=validation_datagen)
 
 
-        print('======= PREDICTING IN THE TEST PARTITION FOR THE FOLD ' + str(current_fold) + ' =======')
-        type_predictions = 'AIF'
-        results_meassures = []
-        for case_number in range(len(ctp_volumes_test)):
-            case_id = ctp_volumes_test[case_number]['image'].split('.')[-2]
-            prediction_ids.append(case_id)
-            cur_nib = nib.load(ctp_volumes_test[case_number]['image'])
-            ctp_vals = cur_nib.get_fdata()
-            x = normalize(ctp_vals[:,:,:,0:min_num_volumes_ctp])
-            if type_predictions == 'AIF':
-                y = aif_annotations_test[case_id]
-            if type_predictions == 'VOF':
-                y = vof_annotations_test[case_id]
-            prefix_fig = ROOT_EXP + '/results/predictions_aif/'+path_tensorboard_log.split('/')[-1]+'_case_'+str(case_id)
-            results_meassures.append(plot_predictions(model,x,y, prefix_fig, True, type_predictions,True))
+        # print('======= PREDICTING IN THE TEST PARTITION FOR THE FOLD ' + str(current_fold) + ' =======')
+        # type_predictions = 'AIF'
+        # results_meassures = []
+        # for case_number in range(len(ctp_volumes_test)):
+        #     case_id = ctp_volumes_test[case_number]['image'].split('.')[-2]
+        #     prediction_ids.append(case_id)
+        #     cur_nib = nib.load(ctp_volumes_test[case_number]['image'])
+        #     ctp_vals = cur_nib.get_fdata()
+        #     x = normalize(ctp_vals[:,:,:,0:min_num_volumes_ctp])
+        #     if type_predictions == 'AIF':
+        #         y = aif_annotations_test[case_id]
+        #     if type_predictions == 'VOF':
+        #         y = vof_annotations_test[case_id]
+        #     prefix_fig = ROOT_EXP + '/results/predictions_aif/'+path_tensorboard_log.split('/')[-1]+'_case_'+str(case_id)
+        #     results_meassures.append(plot_predictions(model,x,y, prefix_fig, True, type_predictions,True))
 
-        preds_fold = tfp.stats.correlation(np.array(results_meassures)[:,1,:],np.array(results_meassures)[:,0,:], sample_axis=0, event_axis=None)
-        preds_fold = preds_fold.numpy()
-        prediction_meassures.append([preds_fold.mean(),preds_fold.std(),preds_fold.var()])
+        # preds_fold = tfp.stats.correlation(np.array(results_meassures)[:,1,:],np.array(results_meassures)[:,0,:], sample_axis=0, event_axis=None)
+        # preds_fold = preds_fold.numpy()
+        # prediction_meassures.append([preds_fold.mean(),preds_fold.std(),preds_fold.var()])
 
-        np.savetxt('results/pearson_fold_'+str(current_fold)+'.csv', prediction_meassures, delimiter=',',fmt='%1.5f')
-        np.savetxt('results/allpreds_fold_'+str(current_fold)+'.csv', np.array(results_meassures)[:,1,:], delimiter=',',fmt='%1.5f')
+        # np.savetxt('results/pearson_fold_'+str(current_fold)+'.csv', prediction_meassures, delimiter=',',fmt='%1.5f')
+        # np.savetxt('results/allpreds_fold_'+str(current_fold)+'.csv', np.array(results_meassures)[:,1,:], delimiter=',',fmt='%1.5f')
 
 
-        test_ids_file=open('results/pred_ids_fold_'+str(current_fold)+'.csv','w')
-        for element in prediction_ids:        
-            test_ids_file.write(element+'\n')
-        test_ids_file.close()
+        # test_ids_file=open('results/pred_ids_fold_'+str(current_fold)+'.csv','w')
+        # for element in prediction_ids:        
+        #     test_ids_file.write(element+'\n')
+        # test_ids_file.close()
         del ctp_volumes_train
         del ctp_volumes_valid
         del ctp_volumes_test  

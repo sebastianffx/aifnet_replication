@@ -6,6 +6,7 @@ import os
 from natsort import natsorted
 import tensorflow as tf
 from .preprocess import read_nifti_file, normalize, normalize_aif, resize_volume, process_scan, normalize_zero_one
+import gc
 
 def read_isles_annotations(aif_annotations_path, root_dir, minimum_number_volumes_ctp, return_aif_only = True):
     aif_annotations = []
@@ -82,6 +83,9 @@ def read_isles_annotations_from_file(aif_annotations_path, partition_file_path, 
             VOF = ctp_vals[VOFx,VOFy,VOFz,:]
             aifs_cases[cur_case] = AIF[0:minimum_number_volumes_ctp] #Since not all the CTP sequences have the same #volumes
             vofs_cases[cur_case] = VOF[0:minimum_number_volumes_ctp] #Since not all the CTP sequences have the same #volumes
+            del ctp_vals
+            gc.collect()
+
     if return_aif_only: 
         return aifs_cases
     else:
@@ -324,7 +328,7 @@ class ISLES18DataGen_aifvof_otf(tf.keras.utils.Sequence):
             augment_functions = [early_bolus,late_bolus]
             random_augmentation = random.choice(augment_functions)
             if self.delay_t == None:
-                self.delay_t = np.random.randint(0,10)
+                self.delay_t = np.random.randint(0,7)
                 #print("Voy a aumentar con un delaz de " + str(self.delay_t))
             volume, labels = random_augmentation(volume_sequence,[label_aif,label_vof], self.delay_t)
         #print("Current volume " + str(case_id))

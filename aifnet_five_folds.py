@@ -42,8 +42,9 @@ aif_annotations_path = ROOT_EXP + 'annotated_aif_vof_complete_revised.csv'#'radi
 min_num_volumes_ctp = 28
 #ROOT_EXP = '/home/sebastian/experiments/aifnet_replication'
 
-nb_epochs=5
-lrs = [0.01]#, 0.1, 0.00001, 0.0001, 0.001]
+
+nb_epochs=8
+lrs = [0.01, 0.1, 0.00001, 0.0001, 0.001]
 random_lrs = [random.uniform(0,lr)*2 for lr in lrs]
 
 for lr in lrs:
@@ -65,7 +66,7 @@ for lr in lrs:
                                                 root_dir, min_num_volumes_ctp, return_aif_only = False)
 
 
-        print(aif_annotations_train['346308'].shape)
+
         ctp_volumes_train = read_isles_volumepaths_from_file_otf(root_dir, train_partition_path, aif_annotations_path)
         ctp_volumes_valid = read_isles_volumepaths_from_file_otf(root_dir, valid_partition_path, aif_annotations_path)
         ctp_volumes_test = read_isles_volumepaths_from_file_otf(root_dir, test_partition_path, aif_annotations_path)
@@ -155,8 +156,13 @@ for lr in lrs:
         for element in prediction_ids:        
             test_ids_file.write(element+'\n')
         test_ids_file.close()
-        #del ctp_volumes_train
-        #del ctp_volumes_valid
-        #del ctp_volumes_test    
-        #gc.collect()
-
+        del ctp_volumes_train
+        del ctp_volumes_valid
+        del ctp_volumes_test  
+        del train_datagen  
+        del aif_annotations_train
+        del aif_annotations_valid
+        del aif_annotations_test
+        del model
+        keras.backend.clear_session()
+        gc.collect()

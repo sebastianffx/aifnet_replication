@@ -50,10 +50,10 @@ def get_model_onehead(width=256, height=256, num_channels=43):
     
     x = layers.Conv3D(filters=32, kernel_size=(3,3,3), activation="relu", data_format='channels_last', padding='same')(x)
     x = layers.Dropout(0.3)(x)
-    
+
     x = layers.Conv3D(filters=64, kernel_size=(3,3,3), activation="relu", data_format='channels_last', padding='same')(x)
     x = layers.Dropout(0.3)(x)
-    
+
     x = layers.Conv3D(filters=128, kernel_size=(3,3,3), activation="relu", data_format='channels_last', padding='same')(x)
 
     #x = layers.Conv3D(filters=256, kernel_size=(3,3,3), activation="relu", data_format='channels_last', padding='same')(x)
@@ -67,13 +67,10 @@ def get_model_onehead(width=256, height=256, num_channels=43):
         
     #The 3D average pooling block averages the volumetric information along the x-y-z axes, 
     #such that the predicted vascular function y(t) is a 1D vector of length T.
-    x_aif = layers.GlobalAveragePooling3D(data_format='channels_last')(voxelwise_mult_each_ctp)
-    #x = layers.Dense(units=512, activation="relu")(x)
-    
-    outputs_aif = layers.Dense(units=num_channels, activation="linear",name="aif_pred")(x_aif)
+    x_aif = layers.GlobalAveragePooling3D(data_format='channels_last', name="loss")(voxelwise_mult_each_ctp)
 
     # Define the model.
-    model = keras.Model(inputs, outputs_aif, name="aifnet")
+    model = keras.Model(inputs, x_aif, name="aifnet")
     return model
 
 

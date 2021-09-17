@@ -1,0 +1,17 @@
+/media/sebastian/data/ASAP/ISLES2018_Training/TRAINING/case_41/SMIR.Brain.XX.O.CT_4DPWI.345829/SMIR.Brain.XX.O.CT_4DPWI.345829.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TRAINING/case_42/SMIR.Brain.XX.O.CT_4DPWI.345836/SMIR.Brain.XX.O.CT_4DPWI.345836.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TRAINING/case_3/SMIR.Brain.XX.O.CT_4DPWI.345575/SMIR.Brain.XX.O.CT_4DPWI.345575.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TRAINING/case_4/SMIR.Brain.XX.O.CT_4DPWI.345582/SMIR.Brain.XX.O.CT_4DPWI.345582.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TRAINING/case_92/SMIR.Brain.XX.O.CT_4DPWI.346186/SMIR.Brain.XX.O.CT_4DPWI.346186.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TRAINING/case_30/SMIR.Brain.XX.O.CT_4DPWI.345752/SMIR.Brain.XX.O.CT_4DPWI.345752.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TRAINING/case_26/SMIR.Brain.XX.O.CT_4DPWI.345724/SMIR.Brain.XX.O.CT_4DPWI.345724.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TRAINING/case_27/SMIR.Brain.XX.O.CT_4DPWI.345731/SMIR.Brain.XX.O.CT_4DPWI.345731.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TRAINING/case_87/SMIR.Brain.XX.O.CT_4DPWI.346151/SMIR.Brain.XX.O.CT_4DPWI.346151.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TESTING/case_49/SMIR.Brain.XX.O.CT_4DPWI.346733/SMIR.Brain.XX.O.CT_4DPWI.346733.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TESTING/case_50/SMIR.Brain.XX.O.CT_4DPWI.346740/SMIR.Brain.XX.O.CT_4DPWI.346740.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TESTING/case_45/SMIR.Brain.XX.O.CT_4DPWI.346703/SMIR.Brain.XX.O.CT_4DPWI.346703.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TESTING/case_46/SMIR.Brain.XX.O.CT_4DPWI.346710/SMIR.Brain.XX.O.CT_4DPWI.346710.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TESTING/case_51/SMIR.Brain.XX.O.CT_4DPWI.346747/SMIR.Brain.XX.O.CT_4DPWI.346747.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TESTING/case_52/SMIR.Brain.XX.O.CT_4DPWI.346754/SMIR.Brain.XX.O.CT_4DPWI.346754.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TESTING/case_1/SMIR.Brain.XX.O.CT_4DPWI.346290/SMIR.Brain.XX.O.CT_4DPWI.346290.nii
+/media/sebastian/data/ASAP/ISLES2018_Training/TESTING/case_2/SMIR.Brain.XX.O.CT_4DPWI.346299/SMIR.Brain.XX.O.CT_4DPWI.346299.nii

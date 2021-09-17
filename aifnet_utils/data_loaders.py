@@ -421,7 +421,7 @@ class ISLES18DataGen_aif(tf.keras.utils.Sequence):
             batch_x.append(x)
             batch_y.append(y)
         #print("Shape of the batch: " + str(np.array(batch_x).shape) + ", "+  str(np.array(batch_y).squeeze().shape))
-        return np.array(batch_x), np.array(batch_y).squeeze()
+        return np.array(batch_x), np.array(batch_y)
 
     def __len__(self):
         return self.n // self.batch_size

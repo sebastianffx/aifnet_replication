@@ -21,7 +21,7 @@ from aifnet_utils.losses import MaxCorrelation
 from aifnet_utils.data_loaders import ISLES18DataGen_aif, read_isles_volumepaths_from_file_otf, read_isles_annotations_from_file, ISLES18DataGen_aifvof_otf
 from aifnet_utils.data_loaders import delay_sequence_padding, anticipate_sequence_padding, late_bolus, early_bolus
 from aifnet_utils.results import plot_predictions
-from aifnet_utils.models_aifnet import get_model_onehead, get_model_twoPvols
+from aifnet_utils.models_aifnet import get_model_onehead 
 import gc
 
 
@@ -98,7 +98,7 @@ for lr in random_lrs_1 + random_lrs_2:
 
         optimizer_aifnet = optimizer = keras.optimizers.SGD(learning_rate=lr_schedule) #keras.optimizers.Adam(learning_rate=initial_learning_rate)
         model.compile(
-            loss=['mse'],
+            loss=[MaxCorrelation],
             optimizer=optimizer_aifnet,
             metrics=['mae'])
 
@@ -106,9 +106,9 @@ for lr in random_lrs_1 + random_lrs_2:
         # Define callbacks.
         early_stopping_cb = keras.callbacks.EarlyStopping(monitor="val_mae", patience=3)
         path_checkpointer_model = ROOT_EXP +'/results/' 
-        path_checkpointer_model += 'aifnet_SGD_MSE_augment_lr' + str(initial_learning_rate) + '_fold_' + str(current_fold) +'.hdf5'
+        path_checkpointer_model += 'aifnet_SGD_MAXCORR_augment_lr' + str(initial_learning_rate) + '_fold_' + str(current_fold) +'.hdf5'
         path_tensorboard_log    = ROOT_EXP + '/results/logsTensorBoard/'
-        path_tensorboard_log    += 'aifnet_SGD_MSE_augment_lr' + str(initial_learning_rate) + '_fold_' + str(current_fold)
+        path_tensorboard_log    += 'aifnet_SGD_MAXCORR_augment_lr' + str(initial_learning_rate) + '_fold_' + str(current_fold)
 
         checkpointer = ModelCheckpoint(filepath=path_checkpointer_model, monitor='val_mae', 
                                     verbose=1, save_best_only=True)

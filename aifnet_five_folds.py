@@ -25,23 +25,25 @@ from aifnet_utils.models_aifnet import get_model_onehead
 import gc
 
 
-#get_ipython().run_line_magic('matplotlib', 'inline')
+#Reading an example PCT volume
+LOCATION = 'SERVER'
+if LOCATION == 'LOCAL':
+    ROOT_EXP = '/Users/sebastianotalora/work/postdoc/ctp/aifnet_replication/'
+    root_dir  = '/Users/sebastianotalora/work/postdoc/data/ISLES/'
 
-#get_ipython().system('pwd')
+if LOCATION == 'INSEL':
+    ROOT_EXP = '/home/sebastian/experiments/aifnet_replication/'
+    root_dir  = '/media/sebastian/data/ASAP/ISLES2018_Training'
+
+IF LOCATION == 'SERVER':
+    ROOT_EXP = '/home/sotalora/aifnet_replication/'
+    root_dir     = '/data/images/sotalora/ISLES18/'
+
+aif_annotations_path = ROOT_EXP + 'radiologist_annotations.csv'
 
 
-
-
-
-keras.backend.set_image_data_format('channels_last')
-ROOT_EXP = '/home/sebastian/experiments/aifnet_replication/'
-root_dir     = '/media/sebastian/data/ASAP/ISLES2018_Training'
-#At insel: /media/sebastian/data/ASAP/ISLES2018_Training
-#Local: '/Users/sebastianotalora/work/postdoc/data/ISLES/'
 aif_annotations_path = ROOT_EXP + 'radiologist_annotations_cleaned.csv'#'radiologist_annotations.csv'#'annotated_aif_vof_complete_revised.csv'
 min_num_volumes_ctp = 43
-#ROOT_EXP = '/home/sebastian/experiments/aifnet_replication'
-
 
 nb_epochs=10
 lrs = [0.01, 0.1, 0.00001, 0.0001, 0.001]
@@ -98,7 +100,7 @@ for lr in random_lrs_1 + random_lrs_2:
 
         optimizer_aifnet = optimizer = keras.optimizers.SGD(learning_rate=lr_schedule) #keras.optimizers.Adam(learning_rate=initial_learning_rate)
         model.compile(
-            loss=[MaxCorrelation],
+            loss=['mse'],
             optimizer=optimizer_aifnet,
             metrics=['mae'])
 
@@ -106,9 +108,9 @@ for lr in random_lrs_1 + random_lrs_2:
         # Define callbacks.
         early_stopping_cb = keras.callbacks.EarlyStopping(monitor="val_mae", patience=3)
         path_checkpointer_model = ROOT_EXP +'/results/' 
-        path_checkpointer_model += 'aifnet_SGD_MAXCORR_augment_lr' + str(initial_learning_rate) + '_fold_' + str(current_fold) +'.hdf5'
+        path_checkpointer_model += 'aifnet_SGD_MSE_augment_lr' + str(initial_learning_rate) + '_fold_' + str(current_fold) +'.hdf5'
         path_tensorboard_log    = ROOT_EXP + '/results/logsTensorBoard/'
-        path_tensorboard_log    += 'aifnet_SGD_MAXCORR_augment_lr' + str(initial_learning_rate) + '_fold_' + str(current_fold)
+        path_tensorboard_log    += 'aifnet_SGD_MSE_augment_lr' + str(initial_learning_rate) + '_fold_' + str(current_fold)
 
         checkpointer = ModelCheckpoint(filepath=path_checkpointer_model, monitor='val_mae', 
                                     verbose=1, save_best_only=True)
@@ -127,36 +129,6 @@ for lr in random_lrs_1 + random_lrs_2:
 
         model.fit(train_datagen,batch_size=1,callbacks=[checkpointer,tb_callback,early_stopping_cb],
                 epochs=nb_epochs, validation_data=validation_datagen)
-
-
-        # print('======= PREDICTING IN THE TEST PARTITION FOR THE FOLD ' + str(current_fold) + ' =======')
-        # type_predictions = 'AIF'
-        # results_meassures = []
-        # for case_number in range(len(ctp_volumes_test)):
-        #     case_id = ctp_volumes_test[case_number]['image'].split('.')[-2]
-        #     prediction_ids.append(case_id)
-        #     cur_nib = nib.load(ctp_volumes_test[case_number]['image'])
-        #     ctp_vals = cur_nib.get_fdata()
-        #     x = normalize(ctp_vals[:,:,:,0:min_num_volumes_ctp])
-        #     if type_predictions == 'AIF':
-        #         y = aif_annotations_test[case_id]
-        #     if type_predictions == 'VOF':
-        #         y = vof_annotations_test[case_id]
-        #     prefix_fig = ROOT_EXP + '/results/predictions_aif/'+path_tensorboard_log.split('/')[-1]+'_case_'+str(case_id)
-        #     results_meassures.append(plot_predictions(model,x,y, prefix_fig, True, type_predictions,True))
-
-        # preds_fold = tfp.stats.correlation(np.array(results_meassures)[:,1,:],np.array(results_meassures)[:,0,:], sample_axis=0, event_axis=None)
-        # preds_fold = preds_fold.numpy()
-        # prediction_meassures.append([preds_fold.mean(),preds_fold.std(),preds_fold.var()])
-
-        # np.savetxt('results/pearson_fold_'+str(current_fold)+'.csv', prediction_meassures, delimiter=',',fmt='%1.5f')
-        # np.savetxt('results/allpreds_fold_'+str(current_fold)+'.csv', np.array(results_meassures)[:,1,:], delimiter=',',fmt='%1.5f')
-
-
-        # test_ids_file=open('results/pred_ids_fold_'+str(current_fold)+'.csv','w')
-        # for element in prediction_ids:        
-        #     test_ids_file.write(element+'\n')
-        # test_ids_file.close()
         del ctp_volumes_train
         del ctp_volumes_valid
         del ctp_volumes_test  

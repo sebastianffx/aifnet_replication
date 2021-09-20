@@ -46,13 +46,13 @@ def get_model_onehead(width=256, height=256, num_channels=43):
     inputs = keras.Input((width, height, None , 43))
 
     x = layers.Conv3D(filters=16, kernel_size=(3,3,1), activation="relu", data_format='channels_last', padding='same')(inputs)        
-    x = layers.Dropout(0.3)(x)
+    #x = layers.Dropout(0.3)(x)
     
     x = layers.Conv3D(filters=32, kernel_size=(3,3,3), activation="relu", data_format='channels_last', padding='same')(x)
-    x = layers.Dropout(0.3)(x)
+    #x = layers.Dropout(0.3)(x)
 
     x = layers.Conv3D(filters=64, kernel_size=(3,3,3), activation="relu", data_format='channels_last', padding='same')(x)
-    x = layers.Dropout(0.3)(x)
+    #x = layers.Dropout(0.3)(x)
 
     x = layers.Conv3D(filters=128, kernel_size=(3,3,3), activation="relu", data_format='channels_last', padding='same')(x)
 
@@ -61,7 +61,7 @@ def get_model_onehead(width=256, height=256, num_channels=43):
     Lout = layers.Conv3D(filters=1, kernel_size=(3,3,3), activation="relu", data_format='channels_last', padding='same')(x)
 
     P_vol_aif = tf.keras.activations.softmax(Lout,name="Pvol_aif")
-    
+    #Insert here the sigmoid instead of the softmaxxx 
     #Voxelwise multiplication of P_vol and each of the CTP time points    
     voxelwise_mult_each_ctp = tf.keras.layers.Multiply()([inputs,P_vol_aif])    
         

@@ -19,13 +19,13 @@ def plot_predictions(model,x,y,prefix_fig, normalize_preds=True, type_pred='AIF'
         y = normalize_zero_one(y)
     if normalize_preds and type_pred !='BOTH':
         y = normalize_zero_one(y)
-        pred = normalize_zero_one(pred)
+        pred = normalize_zero_one(pred[0])
     if savefig:
         if type_pred=='AIF':
             #pred = pred[0][0]
-            print(pred.shape)
-            print(y.shape)
-            print(pred[0].shape)
+            #print(pred.shape)
+            #print(y.shape)
+            #print(pred[0].shape)
             pearson_correlation = pearson_corr(y,pred)
             plt.title('AIF Function Predictions')        
             plt.plot(y,'g-')
@@ -52,16 +52,12 @@ def plot_predictions(model,x,y,prefix_fig, normalize_preds=True, type_pred='AIF'
             plt.plot(y[1])
             plt.plot(predictions[0])
             plt.plot(predictions[1])
-            #print("Saving prediction for case: " + str(prefix_fig.split('/')[-1].split('_')[-1])) 
-            plt.savefig(prefix_fig + '.png', dpi=300)
+            #print("Saving prediction for case: " + str(prefix_fig.split('/')[-1].split('_')[-1]))             
             plt.figure().clear()
             plt.close()
             plt.cla()
             plt.clf()
             #gc.collect()
             #K.clear_session()
-            return y,pred
-    else:
-        #plt.show()
-        return y,pred
-    return
+        plt.savefig(prefix_fig + '.png', dpi=300)
+    return (y,pred)

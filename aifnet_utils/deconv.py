@@ -100,7 +100,7 @@ def plot_cbf_map(train_datagen, selected_slice,example_id, return_array_only=Fal
     
 
 
-def plot_tmax_map(train_datagen, selected_slice,example_id):
+def plot_tmax_map(train_datagen, selected_slice,example_id,return_array_only=False):
     #Gettring Ground truth Tmax
     path_case = '/'.join(train_datagen.ctp_volumes[example_id]['image'].split('/')[0:-2])
     path_tmax = glob.glob(path_case+"/*Tmax*/*nii")[0]
@@ -109,12 +109,15 @@ def plot_tmax_map(train_datagen, selected_slice,example_id):
 
     healty_tmax[healty_tmax > 6] = 0
 
-    print(np.max(healty_tmax))
+    #print(np.max(healty_tmax))
     gt_healty = np.array(normalize_zero_one(healty_tmax[:,:,selected_slice])*255,dtype = 'uint8')
     #gt_healty = ndimage.rotate(gt_healty, 90)
     #gt_healty = np.flip(gt_healty,axis=1)
-    plt.imshow(gt_healty,cmap=plt.cm.jet)
-    return gt_healty
+    if return_array_only:
+        return gt_healty
+    else:
+        plt.imshow(gt_healty,cmap=plt.cm.jet)
+        return gt_healty
 
 
 def plot_estimatedCBF_map(gt_cbf, CBF, gt_healty, selected_slice,normalize_healthy_tissue, return_array_only=False):
@@ -126,7 +129,7 @@ def plot_estimatedCBF_map(gt_cbf, CBF, gt_healty, selected_slice,normalize_healt
     img = np.multiply(img,mask_zeros)
 
     img[img >= np.max(img)] = 0
-    print(np.max(img))
+    #print(np.max(img))
     #img[img >contrast_threshold] = 0
 
     #estimated_cbf = np.array(normalize_zero_one(img)*255,dtype = 'uint8')
@@ -158,10 +161,38 @@ def aif_inverse(A,number_of_truncated_values=8,epsilon=None):
     if epsilon != None:
         S[S<epsilon*max_S] = 0
     
-    A_inv = np.matmul(np.matmul(u,S), vh)
-    pseudo_inv = compute_pseudoinverse(A)
-
     invD = np.matmul(vh,compute_pseudoinverse(S))
     invD = np.matmul(invD,u.T)
     return invD, S
 
+
+
+def mask_CBF(gt_cbf,CBF_volume, selected_slice,gt_healty=None):
+    mask_zeros = gt_cbf != 0
+    mask_zeros = np.array(mask_zeros,dtype='int')
+    mask_zeros.shape
+    img = CBF_volume[:,:,selected_slice]
+    img = np.multiply(img,mask_zeros)
+    img[img >= np.max(img)] = 0
+    estimated_cbf = img
+    if type(gt_healty)=='numpy.ndarray':
+        mask_healthy = gt_healty>0
+        mask_healthy.shape
+        mean_cbf_healthy = np.mean(img[mask_healthy])
+        #print(mean_cbf_healthy)
+        estimated_cbf = np.multiply(1/(mean_cbf_healthy), img)    
+    return estimated_cbf
+    
+    
+
+def save_nifti_from_array_and_referenceHeader(volume, reference_path, filename):
+    reference_nib =  nib.load(reference_path)
+    new_header = header=reference_nib.header.copy()
+    new_nib = nib.Nifti1Image(volume,reference_nib.affine,header=new_header)
+    new_nib.get_data_dtype() == np.dtype(np.float64)
+    new_nib.header.get_xyzt_units()
+    new_nib.header.set_data_dtype = reference_nib.header.get_data_dtype()
+    new_nib.header.set_qform = reference_nib.header.get_qform()
+    new_nib.header.set_zooms = reference_nib.header.get_zooms()
+    nib.save(new_nib, filename)
+    return

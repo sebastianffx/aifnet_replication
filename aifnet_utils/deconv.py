@@ -83,17 +83,21 @@ def perform_deconvolution_circular(perf_data,pseudo_inverse):
                 residues[i,j,cur_slice,:] = residue_f[0:86]
     return CBFs, residues
 
-def plot_cbf_map(train_datagen, selected_slice,example_id,contrast_threshold):
+def plot_cbf_map(train_datagen, selected_slice,example_id, return_array_only=False):
     #Gettring Ground truth CBF
     path_case = '/'.join(train_datagen.ctp_volumes[example_id]['image'].split('/')[0:-2])
     path_cbf = glob.glob(path_case+"/*CBF*/*nii")[0]
     gt_cbf = nib.load(path_cbf).get_fdata()
     #gt_cbf[gt_cbf >contrast_threshold] = 0
     gt_img = np.array(normalize_zero_one(gt_cbf[:,:,selected_slice])*255,dtype = 'uint8')
-    gt_img = ndimage.rotate(gt_img, 90)
-    gt_img = np.flip(gt_img,axis=1)
-    plt.imshow(gt_img,cmap=plt.cm.jet,vmax=2.9)
-    return gt_img
+    #gt_img = ndimage.rotate(gt_img, 90)
+    #gt_img = np.flip(gt_img,axis=1)
+    if return_array_only:
+        return gt_img
+    else:
+        plt.imshow(gt_img,cmap=plt.cm.jet,vmax=2.9)
+        return gt_img
+    
 
 
 def plot_tmax_map(train_datagen, selected_slice,example_id):
@@ -107,13 +111,13 @@ def plot_tmax_map(train_datagen, selected_slice,example_id):
 
     print(np.max(healty_tmax))
     gt_healty = np.array(normalize_zero_one(healty_tmax[:,:,selected_slice])*255,dtype = 'uint8')
-    gt_healty = ndimage.rotate(gt_healty, 90)
-    gt_healty = np.flip(gt_healty,axis=1)
+    #gt_healty = ndimage.rotate(gt_healty, 90)
+    #gt_healty = np.flip(gt_healty,axis=1)
     plt.imshow(gt_healty,cmap=plt.cm.jet)
     return gt_healty
 
 
-def plot_estimatedCBF_map(gt_cbf, CBF, gt_healty, selected_slice,normalize_healthy_tissue):
+def plot_estimatedCBF_map(gt_cbf, CBF, gt_healty, selected_slice,normalize_healthy_tissue, return_array_only=False):
     #Gettring Ground truth Tmax
     mask_zeros = gt_cbf != 0
     mask_zeros = np.array(mask_zeros,dtype='int')
@@ -127,18 +131,21 @@ def plot_estimatedCBF_map(gt_cbf, CBF, gt_healty, selected_slice,normalize_healt
 
     #estimated_cbf = np.array(normalize_zero_one(img)*255,dtype = 'uint8')
     #estimated_cbf = np.array(normalize_zero_one(img)*255,dtype = 'uint8')
-
     #estimated_cbf = ndimage.rotate(estimated_cbf, 90)
-    estimated_cbf = ndimage.rotate(img, 90)
-    estimated_cbf = np.flip(estimated_cbf,axis=1)
+    #estimated_cbf = ndimage.rotate(img, 90)
+    #estimated_cbf = np.flip(estimated_cbf,axis=1)
+
     if normalize_healthy_tissue:
         mask_healthy = gt_healty>0
         mask_healthy.shape
-        mean_cbf_healthy = np.mean(estimated_cbf[mask_healthy])
+        mean_cbf_healthy = np.mean(img[mask_healthy])
         #print(mean_cbf_healthy)
-        estimated_cbf = np.multiply(1/(mean_cbf_healthy), estimated_cbf)
-    plt.imshow(estimated_cbf,cmap=plt.cm.jet)    
-    return estimated_cbf
+        estimated_cbf = np.multiply(1/(mean_cbf_healthy), img)    
+    if return_array_only:
+        return estimated_cbf
+    else:
+        plt.imshow(estimated_cbf,cmap=plt.cm.jet)
+        return estimated_cbf 
 
 
 

@@ -5,7 +5,7 @@ import numpy as np
 import os
 from natsort import natsorted
 import tensorflow as tf
-from .preprocess import read_nifti_file, normalize, normalize_aif, resize_volume, process_scan, normalize_zero_one
+from aifnet_utils.preprocess import read_nifti_file, normalize, normalize_aif, resize_volume, process_scan, normalize_zero_one
 import gc
 
 def read_isles_annotations(aif_annotations_path, root_dir, minimum_number_volumes_ctp, return_aif_only = True):

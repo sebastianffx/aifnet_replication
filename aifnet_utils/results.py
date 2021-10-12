@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from aifnet_utils.preprocess import read_nifti_file, normalize, normalize_aif, process_scan, normalize_zero_one
+from aifnet_utils.preprocess import read_nifti_file, normalize_single_volume, normalize_aif, process_scan, normalize_zero_one, normalize_volumes_in_sequence
 #import keras.backend as K
 import gc 
 

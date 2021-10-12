@@ -10,7 +10,7 @@ from tensorflow import keras
 from natsort import natsorted
 from tensorflow.keras import layers
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
-from aifnet_utils.preprocess import read_nifti_file, normalize, normalize_aif, process_scan, normalize_zero_one
+from aifnet_utils.preprocess import read_nifti_file, normalize_single_volume, normalize_aif, process_scan, normalize_zero_one, normalize_volumes_in_sequence
 from aifnet_utils.data_loaders import ISLES18DataGen_aif, read_isles_volumepaths_from_file_otf, read_isles_annotations_from_file, ISLES18DataGen_aifvof_otf
 from aifnet_utils.data_loaders import delay_sequence_padding, anticipate_sequence_padding, late_bolus, early_bolus
 from aifnet_utils.results import plot_predictions

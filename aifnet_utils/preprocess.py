@@ -9,11 +9,19 @@ def read_nifti_file(filepath, min_num_sequence):
     scan = scan.get_fdata()[:,:,:,0:min_num_sequence]
     return scan
 
-def normalize(volume):
+def normalize_volumes_in_sequence(volume_seq):
+    norm_vol = np.zeros(volume_seq.shape)
+    for vol_num in range(volume_seq.shape[-1]):
+        norm_vol[:,:,:,vol_num] = normalize_single_volume(volume_seq[:,:,:,vol_num])
+    return norm_vol
+
+def normalize_single_volume(volume):
     """Normalize the volume"""
     min = 0
-    max =   400 #Check this with Richard or Roland
+    max =   420 #Check this with Richard or Roland
+    skull_val = 1300
     volume[volume < min] = min
+    volume[volume > skull_val] = 0
     volume[volume > max] = max
     volume = (volume - min) / (max - min)
     volume = volume.astype("float32")

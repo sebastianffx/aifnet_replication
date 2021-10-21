@@ -19,9 +19,9 @@ def normalize_single_volume(volume):
     """Normalize the volume"""
     min = 0
     max =   420 #Check this with Richard or Roland
-    skull_val = 1300
+    #skull_val = 1300
     volume[volume < min] = min
-    volume[volume > skull_val] = 0
+    #volume[volume > skull_val] = 0
     volume[volume > max] = max
     volume = (volume - min) / (max - min)
     volume = volume.astype("float32")

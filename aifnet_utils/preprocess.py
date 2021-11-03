@@ -18,7 +18,7 @@ def normalize_volumes_in_sequence(volume_seq):
 def normalize_single_volume(volume):
     """Normalize the volume"""
     min = 0
-    max =   420 #Check this with Richard or Roland
+    max =   720 #Check this with Richard or Roland
     #skull_val = 1300
     volume[volume < min] = min
     #volume[volume > skull_val] = 0
